@@ -1,5 +1,5 @@
 init:
-	git submodule update --init
+	git submodule update --init --recursive
 
 patch:
 	find patches -type f | awk -F/ '{print("(echo "$$0" && cd dependencies/" $$2 " && git apply ../../" $$0 ")")}' | sh
@@ -18,19 +18,19 @@ update-patches:
 	git add patches
 
 bsp:
-	mill -i mill.bsp.BSP/install
+	./mill -i mill.bsp.BSP/install
 
 idea:
-	mill -i mill.scalalib.GenIdea/idea
+	./mill -i mill.scalalib.GenIdea/idea
 
 compile:
-	mill -i -j 0 __.compile
+	./mill -i -j 0 __.compile
 
 test:
-	mill ventus.tests
+	./mill -i ventus.tests.testOnly play.hello_test2
 
 verilog:
-	mill ventus.run
+	./mill ventus.run
 
 clean:
 	git clean -fd
