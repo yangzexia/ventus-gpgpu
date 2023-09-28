@@ -17,43 +17,43 @@ import IDecode._
 
 
 class CtrlSigs extends Bundle {
-  val inst = UInt(32.W)
-  val wid = UInt(depth_warp.W)
-  val fp = Bool()
-  val branch = UInt(2.W)
+  val inst = UInt(32.W)  // 指令
+  val wid = UInt(depth_warp.W) // warp id
+  val fp = Bool() // 是否是浮点指令？
+  val branch = UInt(2.W) //分支指令，具体编码含义？
   val simt_stack = Bool()
   val simt_stack_op = Bool()
-  val barrier = Bool()
+  val barrier = Bool() // barrier指令？
   val csr = UInt(2.W)
   val reverse = Bool()
-  val sel_alu2 = UInt(2.W)
-  val sel_alu1 = UInt(2.W)
-  val isvec = Bool()
-  val sel_alu3 = UInt(2.W)
-  val mask=Bool()
-  val sel_imm = UInt(4.W)
+  val sel_alu2 = UInt(2.W) // 第二个操作数的类型
+  val sel_alu1 = UInt(2.W) // 第一个操作数的类型
+  val isvec = Bool() // 是否是向量指令？
+  val sel_alu3 = UInt(2.W) // 第三个操作数的类型？
+  val mask=Bool() // 是否带mask？
+  val sel_imm = UInt(4.W) // 是否是立即数？
   val mem_whb = UInt(2.W)
   val mem_unsigned = Bool()
-  val alu_fn = UInt(6.W)
+  val alu_fn = UInt(6.W) // 具体选择哪个执行单元？
   val is_vls12 = Bool()
   val mem = Bool()
   val mul = Bool()
-  val tc = Bool()
+  val tc = Bool() // 是否是tensor指令？
   val disable_mask = Bool()
   val custom_signal_0 = Bool()
   val mem_cmd = UInt(2.W)
   val mop = UInt(2.W)
-  val reg_idx1 = UInt((regidx_width + regext_width).W) // 8.W
-  val reg_idx2 = UInt((regidx_width + regext_width).W)
-  val reg_idx3 = UInt((regidx_width + regext_width).W)
-  val reg_idxw = UInt((regidx_width + regext_width).W)
-  val wvd = Bool()
+  val reg_idx1 = UInt((regidx_width + regext_width).W) // 8.W // 带寄存器扩展的操作数index
+  val reg_idx2 = UInt((regidx_width + regext_width).W) // 同上
+  val reg_idx3 = UInt((regidx_width + regext_width).W) // 同上
+  val reg_idxw = UInt((regidx_width + regext_width).W) // 可能是写寄存器的index
+  val wvd = Bool() // 是否写向量寄存器
   val fence = Bool()
   val sfu = Bool()
   val readmask = Bool()
   val writemask = Bool()
-  val wxd = Bool()
-  val pc=UInt(32.W)
+  val wxd = Bool() // 是否写标量寄存器
+  val pc=UInt(32.W) // 这条指令对应的pc
   val imm_ext = UInt(6.W) // new! immext
   val spike_info=if(SPIKE_OUTPUT) Some(new InstWriteBack) else None
   //override def cloneType: CtrlSigs.this.type = new CtrlSigs().asInstanceOf[this.type]
@@ -110,7 +110,7 @@ class Scoreboard extends Module{
   val read1=MuxLookup(io.ibuffer_if_ctrl.sel_alu1,false.B,Array(A1_RS1->scalarReg.read(io.ibuffer_if_ctrl.reg_idx1),A1_VRS1->vectorReg.read(io.ibuffer_if_ctrl.reg_idx1)))
   val read2=MuxLookup(io.ibuffer_if_ctrl.sel_alu2,false.B,Array(A2_RS2->scalarReg.read(io.ibuffer_if_ctrl.reg_idx2),A2_VRS2->vectorReg.read(io.ibuffer_if_ctrl.reg_idx2)))
   val read3=MuxLookup(io.ibuffer_if_ctrl.sel_alu3,false.B,Array(A3_VRS3->vectorReg.read(io.ibuffer_if_ctrl.reg_idx3),
-    A3_SD->Mux(io.ibuffer_if_ctrl.isvec& (!io.ibuffer_if_ctrl.readmask),vectorReg.read(io.ibuffer_if_ctrl.reg_idx3),Mux(io.ibuffer_if_ctrl.isvec,vectorReg.read(io.ibuffer_if_ctrl.reg_idx2),scalarReg.read(io.ibuffer_if_ctrl.reg_idx2))),
+    A3_SD->Mux(io.ibuffer_if_ctrl.isvec& (!io.ibuffer_if_ctrl.readmask),vectorReg.read(io.ibuffer_if_ctrl.reg_idx3),Mux(io.ibuffer_if_ctrl.isvec,vectorReg.read(io.ibuffer_if_ctrl.reg_idx2),scalarReg.read(io.ibuffer_if_ctrl.reg_idx2)) ),
     A3_FRS3->scalarReg.read(io.ibuffer_if_ctrl.reg_idx3),
     A3_PC-> Mux(io.ibuffer_if_ctrl.branch===B_R, scalarReg.read(io.ibuffer_if_ctrl.reg_idx1),false.B)
   ))

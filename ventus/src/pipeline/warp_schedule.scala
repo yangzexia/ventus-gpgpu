@@ -16,24 +16,24 @@ import top.parameters._
 
 class warp_scheduler extends Module{
   val io = IO(new Bundle{
-    val pc_reset = Input(Bool())
-    val warpReq=Flipped(Decoupled(new warpReqData))
-    val warpRsp=Decoupled(new warpRspData)
-    val wg_id_lookup=Output(UInt(depth_warp.W))
+    val pc_reset = Input(Bool()) // pipe外部信号，reset
+    val warpReq=Flipped(Decoupled(new warpReqData)) // 来自cta？
+    val warpRsp=Decoupled(new warpRspData) // 来自cta？
+    val wg_id_lookup=Output(UInt(depth_warp.W)) // 输出信号
     val wg_id_tag=Input(UInt(TAG_WIDTH.W))
     val pc_req=Decoupled(new ICachePipeReq_np)
     val pc_rsp=Flipped(Valid(new ICachePipeRsp_np))
-    val branch = Flipped(DecoupledIO(new BranchCtrl))
-    val warp_control=Flipped(DecoupledIO(new warpSchedulerExeData))
+    val branch = Flipped(DecoupledIO(new BranchCtrl)) //来自分支控制单元的信号输入
+    val warp_control=Flipped(DecoupledIO(new warpSchedulerExeData)) // 连接到issue单元, =ctrlSigs()
     val issued_warp=Flipped(Valid(UInt(depth_warp.W)))
-    val scoreboard_busy=Input(UInt(num_warp.W))
-    val exe_busy=Input(UInt(num_warp.W))
+    val scoreboard_busy=Input(UInt(num_warp.W)) //每个warp1位，记分牌传入的信号表示该warp能否发射，1不能，0可以
+    val exe_busy=Input(UInt(num_warp.W)) //判断执行单元是否空闲,这个信号外部接地，可能相应逻辑放到scoreb中去了
     //val pc_icache_ready=Input(Vec(num_warp,Bool()))
-    val pc_ibuffer_ready=Input(Vec(num_warp,UInt(depth_ibuffer.W)))
-    val warp_ready=Output(UInt(num_warp.W))
-    val flush=(ValidIO(UInt(depth_warp.W)))
-    val flushCache=(ValidIO(UInt(depth_warp.W)))
-    val CTA2csr=ValidIO(new warpReqData)
+    val pc_ibuffer_ready=Input(Vec(num_warp,UInt(depth_ibuffer.W))) // 表示ibuffer已经拿到指令
+    val warp_ready=Output(UInt(num_warp.W)) // 输出，表示该warp可以发射，连接到ibuffer的输出端ready信号
+    val flush=(ValidIO(UInt(depth_warp.W))) // flush流水线（decode, ibuffer）
+    val flushCache=(ValidIO(UInt(depth_warp.W))) // flush cache
+    val CTA2csr=ValidIO(new warpReqData) // to csrfile
     //val ldst = Input(new warp_schedule_ldst_io()) // assume finish l2cache request
     //val switch = Input(Bool()) // assume coming from LDST unit (or other unit)
   })
@@ -57,7 +57,7 @@ class warp_scheduler extends Module{
   io.flushCache.valid:=io.pc_rsp.valid&io.pc_rsp.bits.status(0)
   io.flushCache.bits:=io.pc_rsp.bits.warpid
 
-  val pcControl=VecInit(Seq.fill(num_warp)(Module(new PCcontrol()).io))
+  val pcControl=VecInit(Seq.fill(num_warp)(Module(new PCcontrol()).io)) //pc管理器，包括跳转pc,pc回退的控制信号，
   //val pcReplay=VecInit(pcControl.map(x=>RegEnable(x.PC_next,(x.PC_src===2.U)&(!x.PC_replay))))
   //val warp_memory_idle=Reg(Vec(num_warp,Bool()))
   //val warp_barrier_array=RegInit(0.U(num_warp.W))
@@ -76,7 +76,7 @@ class warp_scheduler extends Module{
   val current_warp=RegInit(0.U(depth_warp.W))
   val next_warp=WireInit(current_warp)
   current_warp:=next_warp
-  pcControl(next_warp).PC_replay:= (!io.pc_req.ready)|(!pc_ready(next_warp))
+  pcControl(next_warp).PC_replay:= (!io.pc_req.ready)|(!pc_ready(next_warp)) //cache miss或icache已满
   pcControl(next_warp).PC_src:=2.U
   io.pc_req.bits.addr := pcControl(next_warp).PC_next
   io.pc_req.bits.warpid := next_warp

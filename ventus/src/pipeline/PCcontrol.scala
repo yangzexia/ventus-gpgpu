@@ -24,12 +24,12 @@ class PCcontrol() extends Module{
     //val warpnum=Output(UInt(1.W))
   })
   val pout=RegInit(0.U(32.W))
-  val mask=Reg(UInt(num_fetch.W))
+  val mask=Reg(UInt(num_fetch.W)) //2bit的有效位，用于跳转指令取指时指示哪条指令有效（具体见ykx论文）
 
   def align(pc: UInt) = {
     val offset_mask = (icache_align - 1).U(32.W) // e.g. num_fetch = 4 (16B align) => offset_mask = "b1111".U(32.W)
-    val pc_aligned = pc & (~offset_mask).asUInt
-    val pc_mask = VecInit(Seq.fill(num_fetch)(false.B))
+    val pc_aligned = pc & (~offset_mask).asUInt // 对齐pc
+    val pc_mask = VecInit(Seq.fill(num_fetch)(false.B)) //一次取指num_fetch条
     (0 until num_fetch).foreach(i =>
       pc_mask(i) := Mux(pc_aligned + (i * 4).U >= pc, true.B, false.B) // e.g. num_fetch = 4, pc = 28 => pc_aligned = 16, pc_mask = "b1000"
     )
