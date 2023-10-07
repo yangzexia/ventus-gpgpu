@@ -183,8 +183,8 @@ class pipe extends Module{
   val op_col_out_wid = Wire(Bool())
   op_col_in_wid := operand_collector.io.control.bits.wid
   op_col_out_wid := operand_collector.io.out.bits.control.wid
-  scoreb(op_col_in_wid).op_col_in_fire:=operand_collector.io.control.fire
-  scoreb(op_col_out_wid).op_col_out_fire:=operand_collector.io.out.fire
+  scoreb(op_col_in_wid).op_col_in_fire:=operand_collector.io.control.fire // 某个warp的指令进入opc,则相应score的opc_in_file信号拉高
+  scoreb(op_col_out_wid).op_col_out_fire:=operand_collector.io.out.fire // 某个warp的指令出opc,则相应score的opc_out_file信号拉高
 
   scoreb(ibuffer2issue.io.out.bits.wid).if_fire:=(ibuffer2issue.io.out.fire)
   scoreb(wb.io.out_x.bits.warp_id).wb_x_fire:=wb.io.out_x.fire
